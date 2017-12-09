@@ -9,8 +9,8 @@ const int stripCount = 6;
 const int ledCount = 11;
 const int brightness = 100;
 
-enum mode {modeColorWipe, modeRainbowRain, modeRain, modeRainbow, modeSocketConnect, modeSnake, modeSparkle};
-mode currentMode = modeSocketConnect;
+enum mode {modeColorWipe, modeRainbowRain, modeRain, modeRainbow, modeSnake, modeSparkle};
+mode currentMode = modeSparkle;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = pin number (most are valid)
@@ -31,20 +31,21 @@ uint32_t strips[stripCount][ledCount];
 
 WebSocketsClient webSocket;
 
-#define MESSAGE_INTERVAL 10000
-#define HEARTBEAT_INTERVAL 5000
+#define MESSAGE_INTERVAL 30000
+#define HEARTBEAT_INTERVAL 25000
 
 uint64_t messageTimestamp = 0;
 uint64_t heartbeatTimestamp = 0;
 bool isConnected = false;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t eventLength) {
+    Serial.printf("[WSc] WebSocket Event\n");
     String msg;
     switch(type) {
         case WStype_DISCONNECTED:
             Serial.printf("[WSc] Disconnected!\n");
             isConnected = false;
-            currentMode = modeSocketConnect;
+            //currentMode = modeSocketConnect;
             break;
         case WStype_CONNECTED:
             Serial.printf("[WSc] Connected to url: %s\n",  payload);
@@ -52,10 +53,11 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t eventLength) {
             // socket.io upgrade confirmation message (required)
             webSocket.sendTXT("5");
             isConnected = true;
-            currentMode = modeSparkle;
+            //currentMode = modeSparkle;
             break;
         case WStype_TEXT:
             msg = String((char*)payload);
+            Serial.printf("[WSc] Text: %s\n",  msg.c_str());
             if(msg.startsWith("42")) {
               trigger(getEventName(msg).c_str(), getEventPayload(msg).c_str(), eventLength);
             }
@@ -67,6 +69,8 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t eventLength) {
             // send data to server
             // webSocket.sendBIN(payload, eventLength);
             break;
+        default:
+          break;
     }
 }
 
@@ -119,7 +123,6 @@ void setup() {
   
   Serial.begin(115200); // Get ready for serial communications and display the connection status
   Serial.print("Connecting to WiFi network -  ");
-
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -170,36 +173,9 @@ void loop() {
       snake();
       break;
     default:
+      Serial.print("loop switch default\n");
       break;
   }
-
-  if(isConnected) {
-
-      uint64_t now = millis();
-
-      if(now - messageTimestamp > MESSAGE_INTERVAL) {
-        messageTimestamp = now;
-        // example socket.io message with type "messageType" and JSON payload
-        webSocket.sendTXT("42[\"messageType\",{\"greeting\":\"hello\"}]");
-        delay(10);
-      }
-      if((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
-        heartbeatTimestamp = now;
-        // socket.io heartbeat message
-        webSocket.sendTXT("2");
-        delay(10);
-      }
-   } else {
-      Serial.printf("[WSc] Reconnected!\n");
-      while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-      }
-      delay(10);
-      webSocket.beginSocketIO("led-umbrella.herokuapp.com", 80);
-      isConnected = true;   
-      currentMode = modeSocketConnect;
-    }    
 }
 
 void showStrips() {
@@ -240,9 +216,12 @@ void sparkle() {
   int y = random(11);
   strips[x][y] = strip_1.Color(255, 255, 255);
 
-  x = random(6);
-  y = random(11);
-  strips[x][y] = 0;
+  // dim any leds that are on
+  for(int x=0; x < stripCount; x++) {
+    for(int y=0; y< ledCount; y++) {
+      strips[x][y] = DimColor(strips[x][y], .85);  
+    }
+  }
 
   updateStrips();
 }
@@ -326,39 +305,35 @@ void rainbow() {
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
-uint32_t Wheel(int WheelPos) {
-  if(WheelPos < 85) {
-    return strip_1.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-  } else if(WheelPos < 170) {
-    WheelPos -= 85;
-    return strip_1.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+uint32_t Wheel(int wheelPos) {
+  if(wheelPos < 85) {
+    return strip_1.Color(wheelPos * 3, 255 - wheelPos * 3, 0);
+  } else if(wheelPos < 170) {
+    wheelPos -= 85;
+    return strip_1.Color(255 - wheelPos * 3, 0, wheelPos * 3);
   } else {
-    WheelPos -= 170;
-    return strip_1.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+    wheelPos -= 170;
+    return strip_1.Color(0, wheelPos * 3, 255 - wheelPos * 3);
   }
 }
 
 // Returns the Red component of a 32-bit color
-uint8_t Red(uint32_t color)
-{
+uint8_t Red(uint32_t color) {
     return (color >> 16) & 0xFF;
 }
 
 // Returns the Green component of a 32-bit color
-uint8_t Green(uint32_t color)
-{
+uint8_t Green(uint32_t color) {
     return (color >> 8) & 0xFF;
 }
 
 // Returns the Blue component of a 32-bit color
-uint8_t Blue(uint32_t color)
-{
+uint8_t Blue(uint32_t color) {
     return color & 0xFF;
 }
 
-// Return color, dimmed by percentage
-uint32_t DimColor(uint32_t color, float dimPercent)
-{
+// Return color, dimmed by percentage, used by rain
+uint32_t DimColor(uint32_t color, float dimPercent) {
   int red = Red(color) * dimPercent;
   int blue = Blue(color) * dimPercent;
   int green = Green(color) * dimPercent;
