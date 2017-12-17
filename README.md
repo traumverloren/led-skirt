@@ -1,6 +1,6 @@
 # Wifi-enabled LED Skirt Project
 
-This is part of a wearables/fashion/art project.
+This is part of a wearables/fashion/art project ---> [Haute Codeture](https://github.com/traumverloren/led-couture-app)
 
 ---
 
