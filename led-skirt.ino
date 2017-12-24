@@ -142,6 +142,29 @@ void trigger(const char* event) {
   } else if (strcmp(event, "snake") == 0){
    Serial.printf("trigger event %s\n", event);
    currentMode = modeSnake;
+   void trigger(const char* event) {
+    if(strcmp(event, "rainbow") == 0) {
+      Serial.printf("trigger event %s\n", event);
+      currentMode = modeRainbow;
+    } else if (strcmp(event, "colorWipe") == 0){
+       Serial.printf("trigger event %s\n", event);
+       currentMode = modeColorWipe;
+    } else if (strcmp(event, "rainbowRain") == 0){
+       Serial.printf("trigger event %s\n", event);
+       currentMode = modeRainbowRain;
+    } else if (strcmp(event, "rain") == 0){
+       Serial.printf("trigger event %s\n", event);
+       currentMode = modeRain;
+    } else if (strcmp(event, "sparkle") == 0){
+       Serial.printf("trigger event %s\n", event);
+       currentMode = modeSparkle;
+    } else if (strcmp(event, "snake") == 0){
+     Serial.printf("trigger event %s\n", event);
+     currentMode = modeSnake;
+    } else if (strcmp(event, "rainbowSparkle") == 0){
+      Serial.printf("trigger event %s\n", event);
+      currentMode = modeRainbowSparkle;
+     }
   }
 }
 
