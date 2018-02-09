@@ -1,9 +1,10 @@
 #include <ESP8266WiFi.h>
 #include <Adafruit_NeoPixel.h> // Include the adafruit Neopixel Library
 #include <MQTTClient.h>
+#include "arduino_secrets.h" 
 
-const char ssid[] = "SSID";
-const char pass[] = "PW";
+const char ssid[] = SECRET_SSID;
+const char pass[] = SECRET_PASS;
 
 WiFiClient net;
 MQTTClient client;
@@ -53,11 +54,7 @@ void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, pass);
 
-  // Note: Local domain names (e.g. "Computer.local" on OSX) are not supported by Arduino.
-  // You need to set the IP address directly.
-  //
-  // MQTT brokers usually use port 8883 for secure connections.
-  client.begin("IP ADDRESS", PORT, net);
+  client.begin(IP_ADDRESS, PORT, net);
   client.onMessage(messageReceived);
 
   connect();
