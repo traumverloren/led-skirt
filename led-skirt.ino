@@ -1,6 +1,7 @@
-#include <ESP8266WiFi.h>
 #include <Adafruit_NeoPixel.h> // Include the adafruit Neopixel Library
 #include <MQTTClient.h>
+#include <SPI.h>
+#include <WiFi101.h>
 #include "arduino_secrets.h" 
 
 const char ssid[] = SECRET_SSID;
@@ -34,17 +35,18 @@ mode currentMode = modeRain;
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(ledCount, 12, NEO_GRBW + NEO_KHZ800);
+Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(ledCount, A5, NEO_GRBW + NEO_KHZ800);
 Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(ledCount, 5, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(ledCount, 2, NEO_GRBW + NEO_KHZ800);  
-Adafruit_NeoPixel strip_4 = Adafruit_NeoPixel(ledCount, 0, NEO_GRBW + NEO_KHZ800);  
-Adafruit_NeoPixel strip_5 = Adafruit_NeoPixel(ledCount, 15, NEO_GRBW + NEO_KHZ800);
-Adafruit_NeoPixel strip_6 = Adafruit_NeoPixel(ledCount, 13, NEO_GRBW + NEO_KHZ800);  
+Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(ledCount, 6, NEO_GRBW + NEO_KHZ800);  
+Adafruit_NeoPixel strip_4 = Adafruit_NeoPixel(ledCount, 10, NEO_GRBW + NEO_KHZ800);  
+Adafruit_NeoPixel strip_5 = Adafruit_NeoPixel(ledCount, 11, NEO_GRBW + NEO_KHZ800);
+Adafruit_NeoPixel strip_6 = Adafruit_NeoPixel(ledCount, 12, NEO_GRBW + NEO_KHZ800);  
 
 Adafruit_NeoPixel pixelStrips[6] = {strip_1, strip_2, strip_3, strip_4, strip_5, strip_6};
 uint32_t strips[stripCount][ledCount];
 
-void setup() {  
+void setup() {
+  WiFi.setPins(8,7,4,2);  
   for(int x=0; x < stripCount; x++) {
       pixelStrips[x].begin();
       pixelStrips[x].setBrightness(brightness);
@@ -54,6 +56,7 @@ void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, pass);
 
+  // MQTT brokers usually use port 8883 for secure connections.
   client.begin(IP_ADDRESS, PORT, net);
   client.onMessage(messageReceived);
 
