@@ -149,7 +149,7 @@ void loop() {
       break;
     case modeCarousel:
       Serial.print("carousel\n");
-      carousel(80);
+      carousel(120);
       break;
     default:
       break;
